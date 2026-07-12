@@ -9,6 +9,7 @@ import os
 from api.routes.auth import router as auth_router
 
 from services.auth.authmanager import Auth_Manager
+from infrastructure.databases.neo4j import Neo4j_Manager
 
 allowed_origins = [
     "http://localhost:8000", # If you also test locally
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=logging.WARNING, filename="job_post_recommendation_system.log", 
                                                format='%(asctime)s - %(levelname)s - %(message)s')
     app.state.auth_manager = Auth_Manager()
+    app.state.neo4j_manager = Neo4j_Manager()
 
     yield
 

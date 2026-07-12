@@ -6,3 +6,4 @@ pyjwt
 pydantic
 uvicorn
 pami
+pymongo[srv]
