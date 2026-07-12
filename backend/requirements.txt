@@ -1,0 +1,8 @@
+neo4j
+fastapi[standard]
+pwdlib[argon2]
+python-dotenv[standard]
+pyjwt
+pydantic
+uvicorn
+pami
