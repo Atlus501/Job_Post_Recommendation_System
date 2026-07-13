@@ -6,8 +6,18 @@ import uvicorn
 from dotenv import load_env
 import os
 
+#errors
+from pymongo.errors import DuplicateKeyError
+from pydantic import ValidationError
+
+#error handlers
+from api.error_handler import duplicatekeyerror_handler, exception_handler, http_exception_handler,
+                              validationerror_handler, runtimeerror_handler
+
+#routers
 from api.routes.auth import router as auth_router
 
+#dependencies initiallized at beginning
 from services.auth.authmanager import Auth_Manager
 from infrastructure.databases.neo4j import Neo4j_Manager
 
@@ -46,6 +56,12 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/auth")
+
+app.add_exception_handler(DuplicateKeyError, duplicatekeyerror_handler)
+app.add_exception_handler(Exception, exception_handler)
+app.add_exception_handler(ValidationError, validationerror_handler)
+app.add_exception_handler(RuntimeError, runtimeerror_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
 
 """
 Function that initially welcomes the user as the are connected to the endpoint.
