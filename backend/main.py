@@ -23,6 +23,7 @@ from api.routes.auth import router as auth_router
 #dependencies initiallized at beginning
 from services.auth.authmanager import Auth_Manager
 from infrastructure.databases.neo4j import Neo4j_Manager
+from infrastructure.jwt import Jwt_Manager
 
 #creating dependencies 
 @asynccontextmanager
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
                                                format='%(asctime)s - %(levelname)s - %(message)s')
     app.state.auth_manager = Auth_Manager()
     app.state.neo4j_manager = Neo4j_Manager()
+    app.state.jwt_manager = Jwt_Manager()
 
     yield
 

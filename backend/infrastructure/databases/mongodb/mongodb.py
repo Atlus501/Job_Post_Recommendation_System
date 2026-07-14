@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 import logging
@@ -17,7 +17,7 @@ class MongoDB_Manager:
         db_username = settings.MONGODB_USERNAME
         db_password = settings.MONGODB_PASSWORD
         uri = f"mongodb+srv://{db_username}:{db_password}@jobrate.67izimm.mongodb.net/?appName=JobRate"
-        self.client = MongoClient(uri, server_api=ServerApi('1'))
+        self.client = AsyncMongoClient(uri, server_api=ServerApi('1'))
         self.logger = logging.getLogger(__name__)
 
     """
@@ -30,16 +30,21 @@ class MongoDB_Manager:
         return db[table]
 
     """
+    Template for subclasses to set up
+    """
+    async def setup_collection(self):
+        pass
+
+    """
     Function to test he connction of the mongodb manager.
     Params: None
     Returns: None
     """
-    def test_connection (self):
-        uri = self.uri
+    async def test_connection (self):
         # Create a new client and connect to the server
-        client = MongoClient(uri, server_api=ServerApi('1'))
+        client = self.client
         # Send a ping to confirm a successful connection
-        client.admin.command('ping')
+        await client.admin.command('ping')
 
 if __name__ == "__main__":
     load_dotenv()
