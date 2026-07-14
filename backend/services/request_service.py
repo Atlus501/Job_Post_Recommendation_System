@@ -44,7 +44,7 @@ class Request_Service:
     """
     async def review_request(self, id : str, approved : bool):
         result = await self.collection.update_one({"_id" : id}, {"$set" : {"approved" : approved}})
-        return result.matched_count > 0
+        return result.modified > 0
     
     """
     Function for deleting requests
@@ -52,5 +52,6 @@ class Request_Service:
 
     """
     async def delete_unverified_requests(self):
-        return await self.collection.delete_many({"approved" : False, "reviewer" : {"$exists" : True}}, 
+        result = await self.collection.delete_many({"approved" : False, "reviewer" : {"$exists" : True}}, 
                                                     comment="removing denied requests")
+        return result.deleted_count > 0

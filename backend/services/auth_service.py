@@ -3,7 +3,7 @@ from pwdlib import PasswordHash
 
 from config.settings import settings
 
-from schemas.services.auth import User
+from schemas.services.auth import User, ChangePasswordInfo
 
 from infrastructure.databases.mongodb.users import User_DB
 
@@ -43,8 +43,10 @@ class Auth_Service:
             uuid (uuid)
     Returns: result of whether the uuid has been updated
     """
-    async def set_uuid(self, username : str, uuid : uuid):
-        return await self.collection.update_one({"username" : username}, {"$set" : {"uuid" : uuid}})
+    async def set_uuid(self, username : str, uuid : str):
+        result = await self.collection.update_one({"username" : username}, 
+                                                    {"$set" : {"uuid" : uuid}})
+        return result.modified_count > 0
 
     """
     Function that confirms a user's uuid
@@ -60,23 +62,23 @@ class Auth_Service:
             old_password (str)
             new_password (str)
     """
-    async def change_password(self, username : str, old_password: str, new_passowrd: str):
-        user = await self.collection.find_one({"username" : username})
+    async def change_password(self, change_password_info : ChangePasswordInfo):
+        user = await self.collection.find_one({"username" : change_password_info.username})
 
-        if not user or not self.verify_password(old_password, user['password']):
+        if not user or not self.verify_password(change_password_info.old_password, user['password']):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, 
                 detail="Received incorrect information",
             )
 
-        hashed_new_password = self.hash_password(new_password)
+        hashed_new_password = self.hash_password(change_password_info.new_password)
 
-        query_filter = {'username' : username}
+        query_filter = {'username' : change_password_info.username}
         update_operation = { '$set' : 
             { 'password' : hashed_new_password }
         }
 
-        return await self.collection.update_one(query_filter, update_operation)
+        return (await self.collection.update_one(query_filter, update_operation)).modified_count > 0
 
     """
     Function that hashes the password
@@ -100,7 +102,7 @@ class Auth_Service:
             password (str)
     Returns: user object
     """
-    async def authenticate_user(self, username: str, password: str):
+    async def authenticate_user(self, username : str, password : str):
         user = await self.get_user(username)
         if not user or not self.verify_password(password, user.password):
             raise HTTPException(

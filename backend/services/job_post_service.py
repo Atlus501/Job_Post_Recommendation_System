@@ -37,10 +37,12 @@ class Job_Post_Service:
     Function for removing one job post
     """
     async def delete_job_post(self, id):
-        return await self.collection.delete_one({"_id" : id})
+        result await self.collection.delete_one({"_id" : id})
+        return result.delete_count > 0
 
     """
     Function for updating one job post
     """
     async def update_job_post(self, id, job_post : Job_Post):
-        return await self.collection.update_one({"_id" : id}, job_post.model_dump())
+        result = await self.collection.update_one({"_id" : id}, {"$set" : job_post.model_dump()})
+        return result.modified_count > 0
