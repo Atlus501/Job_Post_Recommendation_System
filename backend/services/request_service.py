@@ -13,27 +13,27 @@ class Request_Service:
     """
     def __init__(self, db : Request_DB)
         self.client = db.client
-        self.collection = db.collection
+        self.request = db.collection
 
     """
     Function for adding requests
     """
     async def add_request(self, request: Request):
         request_data = request.model_dump()
-        return await self.collection.insert_one(request_data)
+        return await self.request.insert_one(request_data)
 
     """
     Function for retrieving a batch of requests
     """
     async def get_request_batch(self, session, reviewer, limit=20):
         async with self.client.start_session().bind():
-            docs = await self.collection.find({"reviewed" : False, "reviewer" : {"$exists" : False}}).limit(limit).sort("create_date", pymongo.ASCENDING)
+            docs = await self.request.find({"reviewed" : False, "reviewer" : {"$exists" : False}}).limit(limit).sort("create_date", pymongo.ASCENDING)
             doc_list = await docs.to_list()
             if doc_list == []:
                 return []
 
             ids = [doc['_id'] for doc in doc_list]
-            await self.collection.update_many({"_id" : {"$in" : ids}}, {"$set" : {"reviewer" : reviewer}})
+            await self.request.update_many({"_id" : {"$in" : ids}}, {"$set" : {"reviewer" : reviewer}})
             return doc_list
 
     """
@@ -43,7 +43,7 @@ class Request_Service:
     Returns: status (bool) -- whether it has successfully updated the request
     """
     async def review_request(self, id : str, approved : bool):
-        result = await self.collection.update_one({"_id" : id}, {"$set" : {"approved" : approved}})
+        result = await self.request.update_one({"_id" : id}, {"$set" : {"approved" : approved}})
         return result.modified > 0
     
     """
@@ -52,6 +52,6 @@ class Request_Service:
 
     """
     async def delete_unverified_requests(self):
-        result = await self.collection.delete_many({"approved" : False, "reviewer" : {"$exists" : True}}, 
+        result = await self.request.delete_many({"approved" : False, "reviewer" : {"$exists" : True}}, 
                                                     comment="removing denied requests")
         return result.deleted_count > 0

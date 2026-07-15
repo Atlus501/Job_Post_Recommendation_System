@@ -10,3 +10,8 @@ class ChangePasswordInfo(BaseModel):
     username : str
     old_password : str
     new_password : str
+
+class RoleChangeRequest(BaseModel):
+    authorizor : str
+    target : str
+    role : str

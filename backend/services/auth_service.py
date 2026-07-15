@@ -3,7 +3,7 @@ from pwdlib import PasswordHash
 
 from config.settings import settings
 
-from schemas.services.auth import User, ChangePasswordInfo
+from schemas.services.auth import User, ChangePasswordInfo, RoleChangeRequest
 
 from infrastructure.databases.mongodb.users import User_DB
 
@@ -17,7 +17,7 @@ class Auth_Service:
     """
     def __init__ (self, database : User_DB):
         self.password_hash = PasswordHash.recommended()
-        self.collection = database.collection
+        self.auth = database.collection
 
     """
     Function that creates users and stores them in the database
@@ -26,7 +26,7 @@ class Auth_Service:
     async def create_user(self, user : User):
         user_data = user.model_dump()
         user_object['password'] = self.hash_password(user.password)
-        user = await self.collection.insert_one(user_object)
+        user = await self.auth.insert_one(user_object)
         return str(user.inserted_id)
 
     """
@@ -35,7 +35,22 @@ class Auth_Service:
     Returns: result of whether they can find an entry with that username
     """
     async def get_user(self, username : str):
-        return await self.collection.find_one({"username" : username})
+        return await self.auth.find_one({"username" : username})
+
+    """
+    Function that changes the roles of a user
+    """
+    async def change_role(self, request : RoleChangeRequest):
+        authorizor_info = await self.get_user(request.authorizor)
+
+        if not authorizor_info or authorizor['role'] != "admin":
+            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, 
+                                detail="user is unauthorized to make this request")
+
+        result = await self.auth({"username" : request.target}, 
+                                        {"$set" : {"role" : request.role}})
+
+        return result.matched_count > 0
 
     """
     Function that sets uuids
@@ -44,7 +59,7 @@ class Auth_Service:
     Returns: result of whether the uuid has been updated
     """
     async def set_uuid(self, username : str, uuid : str):
-        result = await self.collection.update_one({"username" : username}, 
+        result = await self.auth.update_one({"username" : username}, 
                                                     {"$set" : {"uuid" : uuid}})
         return result.modified_count > 0
 
@@ -54,7 +69,7 @@ class Auth_Service:
             uuid (uuid)
     """
     async def confirm_uuid(self, uuid : str):
-        return await self.collection.find_one({"uuid" : uuid})
+        return await self.auth.find_one({"uuid" : uuid})
 
     """
     Function that gets users
@@ -63,7 +78,7 @@ class Auth_Service:
             new_password (str)
     """
     async def change_password(self, change_password_info : ChangePasswordInfo):
-        user = await self.collection.find_one({"username" : change_password_info.username})
+        user = await self.auth.find_one({"username" : change_password_info.username})
 
         if not user or not self.verify_password(change_password_info.old_password, user['password']):
             raise HTTPException(
@@ -78,7 +93,7 @@ class Auth_Service:
             { 'password' : hashed_new_password }
         }
 
-        return (await self.collection.update_one(query_filter, update_operation)).modified_count > 0
+        return (await self.auth.update_one(query_filter, update_operation)).modified_count > 0
 
     """
     Function that hashes the password

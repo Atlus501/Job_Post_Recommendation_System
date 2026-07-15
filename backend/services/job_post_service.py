@@ -11,14 +11,14 @@ class Job_Post_Service:
     Constructor for the job post service manager
     """
     def __init__ (self, db : Job_Post_DB):
-        self.collection = db.collection
+        self.job_post = db.collection
         self.client = db.client
 
     """
     Function for getting job posts
     """
     async def get_job_posts(self, id_list : list[str]):
-        res = await self.collection.find({"_id" : {"$in" : id_list}}})
+        res = await self.job_post.find({"_id" : {"$in" : id_list}}})
         return await res.to_list()
     
     """
@@ -30,19 +30,19 @@ class Job_Post_Service:
 
         requests = [InsertOne(document=job_post.model_dump()) for job_post in job_post_list]
 
-        result = await self.collection.bulk_write(requests, ordered=False)
+        result = await self.job_post.bulk_write(requests, ordered=False)
         return result
 
     """
     Function for removing one job post
     """
     async def delete_job_post(self, id):
-        result await self.collection.delete_one({"_id" : id})
+        result await self.job_post.delete_one({"_id" : id})
         return result.delete_count > 0
 
     """
     Function for updating one job post
     """
     async def update_job_post(self, id, job_post : Job_Post):
-        result = await self.collection.update_one({"_id" : id}, {"$set" : job_post.model_dump()})
+        result = await self.job_post.update_one({"_id" : id}, {"$set" : job_post.model_dump()})
         return result.modified_count > 0

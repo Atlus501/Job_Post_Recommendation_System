@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
 from infrastructure.databases.mongodb.comments import Comments_DB
-from infrastructure.databases.mongodb.ratings import Ratings_DB
+from infrastructure.databases.mongodb.vote import Vote_DB
 
-from schemas.services.comments import Comment
+from schemas.services.comments import Comment, Comment_Ids
 
 """
 Class for handling comments related business logic
@@ -14,17 +14,23 @@ class Comments_Service:
     Params: comments_db (Comments_DB)
             ratings_db (Ratings_DB)
     """
-    def __init__ (self, comments_db : Comments_DB, ratings_db : Ratings_DB):
-        self.comments = comments_db
-        self.ratings = ratings_db
+    def __init__ (self, comments_db : Comments_DB, vote_db : Vote_DB):
+        self.comment = comments_db.collection
 
     """
-    Retrieves a list of comments for a specific job
+    Retrieves a list of comments for a specific job.
+    Params: job_post_id (str)
+    Returns: list of comment objects
     """
     async def get_comments(self, job_post_id : str):
-        result = await self.comments.find({"job_post_id" : job_post_id})
+        result = await self.comment.find({"job_post_id" : job_post_id})
         return await result.to_list()
 
+    """
+    Adds a new comment
+    Params: comment (Comment)
+    Returns: result of whether the comment was inserted
+    """
     async def add_comment(self, comment : Comment):
         user = comment.model_dump()
         user['upvotes'] = 0
@@ -32,8 +38,22 @@ class Comments_Service:
         user['created_date'] = str(datetime.now(timezone.utc))
         return await self.comment.insert(user)
 
-    async def upsert_comment(self, comment : Comment):
-        result = await self.comments.update_one({"user_id" : comment.user_id, "job_post_id" : job_post_id}, 
+    """
+    Inserts a new comment
+    Params: comment (Comment)
+    Returns: result of whether an entry was modified
+    """
+    async def insert_comment(self, comment : Comment):
+        result = await self.comment.update_one({"user_id" : comment.user_id, "job_post_id" : job_post_id}, 
                                                 {"$set" : {"description" : comment.description}})
 
         return result.modified_count > 0
+
+    """
+    Removes a comment
+    Params: comment_ids (Comment_ids)
+    Returns: result of whether an entry was deleted
+    """
+    async def remove_comment(self, comment_ids : Comment_ids):
+        result = await self.comment.remove_one(comment_ids.model_dump())
+        return result.deleted_count > 0
