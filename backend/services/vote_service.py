@@ -13,6 +13,7 @@ class Vote_Service:
     def __init__(self, vote_db : Vote_DB, comment_db : Comment_DB):
         self.vote = vote_db.collection
         self.comment = comment_db.collection
+        self.db = vote_db
 
     """
     Function for upserting a vote
@@ -20,32 +21,33 @@ class Vote_Service:
     Returns: result (bool) -- whether a vote was upserted
     """
     async def upsert_vote(self, vote : Vote):
-        result = await self.vote.update_one({"user_id" : vote.user_id, "comment_id" : vote.comment_id}, 
-                                        {"$set" : vote.model_dump()}, upsert=True)
+        async def helper():
+            search_query = {"user_id": vote.user_id, "comment_id": vote.comment_id}
 
-        """
-        Helper method for updating comment count
-        """
-        async def update_vote(upvote : bool):
-            upvote_inc = 1 if upvote else -1
-            return await self.comment.update_one({"_id" : vote.comment_id}, 
-                                                        {"$inc": {"upvotes": upvote_inc,
-                                                                    "downvotes" : -1 * upvote_inc}
-                                                                    })
+            old_doc = await self.vote.find_one_and_update(
+                search_query,
+                {"$set": vote.model_dump()},
+                upsert=True,
+                return_document=ReturnDocument.BEFORE
+            )                
 
-        async def update_inserted_vote(upvote : bool):
-            field = "upvotes" if upvote else "downvotes"
-            return await self.comment.update_one({"_id" : vote.comment_id},
-                                                    {"$inc": {field : 1}})
+            if old_doc == None:
+                field = "upvotes" if vote.upvote else "downvotes"
 
-        if result.modified_count > 0:
-            await update_vote(vote.upvote)
+                await self.comment.update_one({"_id" : vote.comment_id},
+                                                {"$inc": {field : 1}})
+                return True
+
+            if old_doc['upvote'] != vote.upvote:
+                upvote_inc = 1 if upvote else -1
+                await self.comment.update_one({"_id" : vote.comment_id}, 
+                                                {"$inc": {"upvotes": upvote_inc,
+                                                    "downvotes" : -1 * upvote_inc}
+                                                })
+                                    
             return True
-        elif result.upserted_id is not None:
-            await update_inserted_vote(vote.upvote)
-            return True
-                                
-        return True
+
+        return await self.db.start_transaction(helper)
 
     """
     Function for getting a vote
@@ -55,11 +57,3 @@ class Vote_Service:
     """
     async def get_user_vote(self, user_id : str, comment_id : str):
         return await self.vote.find_one({"user_id" : user_id, "comment_id" : comment_id})
-
-    """
-    Function for getting vote sum
-    """
-    async def get_comment_votes(self, comment_id : str):
-        return await self.vote.aggregate({"$match" : comment_id}, 
-                                        {"$group" : {_id : "$upvote", 
-                                                        vote_count : {"$sum" : 1}}})

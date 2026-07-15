@@ -3,7 +3,7 @@ from pwdlib import PasswordHash
 
 from config.settings import settings
 
-from schemas.services.auth import User, ChangePasswordInfo, RoleChangeRequest
+from schemas.services.auth import User, ChangePasswordInfo, RoleChangeRequest, BanRequest, UnbanRequest
 
 from infrastructure.databases.mongodb.users import User_DB
 
@@ -38,21 +38,6 @@ class Auth_Service:
         return await self.auth.find_one({"username" : username})
 
     """
-    Function that changes the roles of a user
-    """
-    async def change_role(self, request : RoleChangeRequest):
-        authorizor_info = await self.get_user(request.authorizor)
-
-        if not authorizor_info or authorizor['role'] != "admin":
-            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, 
-                                detail="user is unauthorized to make this request")
-
-        result = await self.auth({"username" : request.target}, 
-                                        {"$set" : {"role" : request.role}})
-
-        return result.matched_count > 0
-
-    """
     Function that sets uuids
     Params: username (str)
             uuid (uuid)
@@ -81,10 +66,7 @@ class Auth_Service:
         user = await self.auth.find_one({"username" : change_password_info.username})
 
         if not user or not self.verify_password(change_password_info.old_password, user['password']):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Received incorrect information",
-            )
+            return False
 
         hashed_new_password = self.hash_password(change_password_info.new_password)
 
@@ -119,10 +101,42 @@ class Auth_Service:
     """
     async def authenticate_user(self, username : str, password : str):
         user = await self.get_user(username)
-        if not user or not self.verify_password(password, user.password):
+
+        if not user not self.verify_password(password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+        if user.banned:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User is banned. Reason: {str(user.reason)}",
+            )
         return True
+
+    """
+    Function that checks if the user is an admin
+    """
+    async def confirm_role(self, username : str, role : str):
+        user = await self.get(username)
+        return user and user['role'] == role
+
+    """
+    Function that changes the roles of a user
+    """
+    async def change_role(self, request : RoleChangeRequest):
+        result = await self.auth.update_one({"username" : request.target}, 
+                                            {"$set" : {"role" : request.role}})
+        return result.modified_count > 0
+
+    """
+    Function that bans users
+    Params: request : BanRequest
+    Returns: whether the user was banned
+    """
+    async def update_ban_status(self, request : BanRequest):
+        result = await self.auth.update_one({"username" : request.target},
+                                            {"$set" : {"banned" : request.banned, "reason" : request.reason}})
+        return result.modified_count > 0

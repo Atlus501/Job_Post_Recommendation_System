@@ -12,13 +12,19 @@ class Job_Post_Service:
     """
     def __init__ (self, db : Job_Post_DB):
         self.job_post = db.collection
-        self.client = db.client
+
+    """
+    Function for getting job posts by default 
+    """
+    async def get_job_posts(self, limit=30):
+        res = await self.job_post.find({}).limit(limit)
+        return await res.to_list()
 
     """
     Function for getting job posts
     """
-    async def get_job_posts(self, id_list : list[str]):
-        res = await self.job_post.find({"_id" : {"$in" : id_list}}})
+    async def get_job_posts_recc(self, id_list : list[str]):
+        res = await self.job_post.find({"_id" : {"$in" : id_list}})
         return await res.to_list()
     
     """

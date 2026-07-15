@@ -12,4 +12,4 @@ class Request_DB(MongoDB):
     Sets up the indicies of the collection
     """
     async def setup_collection(self):
-        await requests_collection.create_index([("Author", 1), ("Company", 1), ("Position", 1)], unique=True)
+        await requests_collection.create_index([("company", 1), ("position", 1)], unique=True)

@@ -32,21 +32,17 @@ class Comments_Service:
     Returns: result of whether the comment was inserted
     """
     async def add_comment(self, comment : Comment):
-        user = comment.model_dump()
-        user['upvotes'] = 0
-        user['downvotes'] = 0
-        user['created_date'] = str(datetime.now(timezone.utc))
-        return await self.comment.insert(user)
+        return await self.comment.insert(comment.model_dump())
 
     """
     Inserts a new comment
     Params: comment (Comment)
     Returns: result of whether an entry was modified
     """
-    async def insert_comment(self, comment : Comment):
+    async def upsert_comment(self, comment : Comment):
         result = await self.comment.update_one({"user_id" : comment.user_id, "job_post_id" : job_post_id}, 
-                                                {"$set" : {"description" : comment.description}})
-
+                                                {"$set" : {"description" : comment.description}},
+                                                upsert=True)
         return result.modified_count > 0
 
     """

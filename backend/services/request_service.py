@@ -1,5 +1,7 @@
 import logging
 
+import pymongo
+
 from schemas.services.requests import Request
 
 from infrastructure.databases.mongodb.requests import Request_DB
@@ -12,7 +14,7 @@ class Request_Service:
     Constructor for managing requests to add job postings
     """
     def __init__(self, db : Request_DB)
-        self.client = db.client
+        self.db = db
         self.request = db.collection
 
     """
@@ -25,8 +27,8 @@ class Request_Service:
     """
     Function for retrieving a batch of requests
     """
-    async def get_request_batch(self, session, reviewer, limit=20):
-        async with self.client.start_session().bind():
+    async def get_request_batch(self, reviewer, limit=20):
+        async def helper():
             docs = await self.request.find({"reviewed" : False, "reviewer" : {"$exists" : False}}).limit(limit).sort("create_date", pymongo.ASCENDING)
             doc_list = await docs.to_list()
             if doc_list == []:
@@ -35,6 +37,8 @@ class Request_Service:
             ids = [doc['_id'] for doc in doc_list]
             await self.request.update_many({"_id" : {"$in" : ids}}, {"$set" : {"reviewer" : reviewer}})
             return doc_list
+
+        return await self.db.start_transaction(helper)
 
     """
     Function for reviewing a request

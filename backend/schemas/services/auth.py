@@ -15,3 +15,14 @@ class RoleChangeRequest(BaseModel):
     authorizor : str
     target : str
     role : str
+
+class BanRequest(BaseModel):
+    authorizor : str
+    target: str
+    reason: str
+
+class UnbanRequest(BaseModel):
+    authorizor : str
+    target : str
+    banned: bool
+    reason : str

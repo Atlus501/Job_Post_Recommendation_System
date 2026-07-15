@@ -36,6 +36,15 @@ class MongoDB:
         pass
 
     """
+    Starting a transaction
+    """
+    async def start_transaction(self, function, *args, **kwargs):
+        async with await self.client.start_session() as session:
+            async with session.start_transaction():
+                async with session.bind():
+                    return await function(*args, **kwargs)
+
+    """
     Function to test he connction of the mongodb manager.
     Params: None
     Returns: None

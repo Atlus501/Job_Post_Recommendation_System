@@ -1,4 +1,5 @@
-import infrastructure.databases.mongodb.rating import Rating_DB
+from infrastructure.databases.mongodb.rating import Rating_DB
+from infrastructure.databases.mongodb.job_post import Job_Post_DB
 
 from schemas.services.rating import Rating, Rating_Identifiers
 
@@ -6,9 +7,10 @@ from schemas.services.rating import Rating, Rating_Identifiers
 Class for managing the ratings service logic
 """
 class Ratings_Service:
-    def __init__ (self, db : Rating_DB):
-        self.rating = db.collection
-        self.client = db.client
+    def __init__ (self, rating : Rating_DB, job_post : Job_Post_DB):
+        self.rating = rating.collection
+        self.job_post = job_post.collection
+        self.db = rating
 
     """
     Function for upserting ratings
@@ -16,10 +18,31 @@ class Ratings_Service:
     Returns: whether an entry was created or updated
     """
     async def upsert_rating(self, rating : Rating):
-        result = await self.rating.update_one({user_id : rating.user_id, job_post_id : rating.job_post_id}, 
-                                                    {"$set" : rating.model_dump()},
-                                                    upsert=True)
-        return result.modified_count > 0 or result.upserted_id is not None
+        async def helper():
+            search_query = {"user_id" : rating.user_id, "job_post_id" : rating.job_post_id}
+
+            old_rating_doc = await self.rating.find_one_and_update(
+                search_query,
+                {"$set": rating.model_dump()},
+                upsert=True,
+                return_document=ReturnDocument.BEFORE  # Gives us the snapshot right before the overwrite
+            )
+
+            if not old_rating_doc:
+                await self.job_post.update_one({"_id" : rating.job_post_id},
+                                                {"$inc" : {"vote_sum" : rating.rating,
+                                                            "vote_count" : 1}})
+                return True
+
+            rating_difference = rating.rating - old_rating_doc['rating']
+
+            if rating_difference != 0:
+                await self.job_post.update_one({"_id" : rating.job_post_id}, 
+                                                {"$inc" : {"vote_sum": (rating.rating - old_rating_doc['rating'])}})
+            return True
+
+        return await self.db.start_transaction(helper)
+        
 
     """
     Function that edits a rating for the user
@@ -37,16 +60,3 @@ class Ratings_Service:
     async def remove_user_rating(self, rating_ids : Rating_Identifiers):
         result = await self.rating.delete_one(rating_ids.model_dump())
         return result.deleted_count > 0
-
-    """
-    Function that gets the average rating for a job post
-    Params: job_post_id (str)
-    Return: the average rating of a job position
-    """
-    async def get_avg_rating(self, job_post_id : str):
-        result = awalt self.colelction.aggregate({"$match" : job_post_id}, 
-                                                    {"$group" : {
-                                                        _id : "$job_post_id",
-                                                        "average_rating" : {"$avg" : "$rating"},
-                                                    }})
-        return result
