@@ -12,4 +12,5 @@ logger = logging.getLogger(__name__)
 
 @limiter.limit("")
 @router.get("/get_request")
-async def 
+async def get_request(request : Request):
+    user = 

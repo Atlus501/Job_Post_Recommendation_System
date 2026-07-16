@@ -21,8 +21,7 @@ from api.error_handler import duplicatekeyerror_handler, exception_handler, http
 from api.routes.auth import router as auth_router
 
 #dependencies initiallized at beginning
-from services.auth_service import Auth_Service
-from services.job_post_service import Job_Post_Service
+
 
 from infrastructure.databases.neo4j import Neo4j_DB
 from infrastructure.jwt import Jwt_Manager
@@ -33,9 +32,18 @@ async def lifespan(app: FastAPI):
     # [Startup]: Triggered before the server starts accepting requests
     logging.basicConfig(level=logging.INFO, filename="job_post_recommendation_system.log", 
                                                format='%(asctime)s - %(levelname)s - %(message)s')
-    app.state.auth_service = Auth_Service()
-    app.state.job_post = Job_Post_Service()
+
+    app.state.services = {}
+    app.state.services['auth'] = Auth_Service()
+    app.state.services['comment'] = Comment_Service()
+    app.state.services['job_post'] = Job_Post_Service()
+    app.state.services['rating'] = Rating_Service()
+    app.state.services['request'] = Request_Service()
+    app.state.services['unban_request'] = Unban_Request()
+    app.state.services['vote'] = Vote_Service()
+
     app.state.neo4j_db = Neo4j_DB()
+
     app.state.jwt_manager = Jwt_Manager()
 
     yield

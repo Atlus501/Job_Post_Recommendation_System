@@ -6,7 +6,7 @@ from schemas.services.rating import Rating, Rating_Identifiers
 """
 Class for managing the ratings service logic
 """
-class Ratings_Service:
+class Rating_Service:
     def __init__ (self, rating : Rating_DB, job_post : Job_Post_DB):
         self.rating = rating.collection
         self.job_post = job_post.collection

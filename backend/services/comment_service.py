@@ -8,7 +8,7 @@ from schemas.services.comments import Comment, Comment_Ids
 """
 Class for handling comments related business logic
 """
-class Comments_Service:
+class Comment_Service:
     """
     Constructor for comments service.
     Params: comments_db (Comments_DB)
