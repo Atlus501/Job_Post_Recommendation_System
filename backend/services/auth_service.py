@@ -5,7 +5,7 @@ from config.settings import settings
 
 from schemas.services.auth import User, ChangePasswordInfo, RoleChangeRequest, BanRequest, UnbanRequest
 
-from infrastructure.databases.mongodb.users import User_DB
+from infrastructure.databases.mongodb.user import User_DB
 
 """
 This is the class that will manage the authentication information & jwt of users
@@ -102,7 +102,7 @@ class Auth_Service:
     async def authenticate_user(self, username : str, password : str):
         user = await self.get_user(username)
 
-        if not user not self.verify_password(password, user.password):
+        if not user or not self.verify_password(password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",

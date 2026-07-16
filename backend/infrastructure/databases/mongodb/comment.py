@@ -1,6 +1,6 @@
 from infrastructure.databases.mongodb.mongodb import MongoDB
 
-class Comments_DB(MongodB):
+class Comment_DB(MongoDB):
     def __init__ (self):
         super.__init__()
         self.collection = self.get_collection("comments")

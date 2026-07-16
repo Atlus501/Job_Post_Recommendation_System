@@ -1,7 +1,7 @@
 import pymongo
 
 from infrastructure.databases.mongodb.unban_request import Unban_Request_DB
-from schemas.services.unban_reqest import Unban_Request, Unban_Approval, Review_Request
+from schemas.services.unban_request import Unban_Request, Unban_Approval, Review_Request
 
 """
 Class responsible for the service logic of unban requests

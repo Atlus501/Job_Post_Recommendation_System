@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 current_dir = Path(__file__).resolve().parent
-env_path = current_dir.parent.parent /".env"
+env_path = current_dir.parent /".env"
 
 class Settings(BaseSettings):
     # Enforce type safety for environment variables

@@ -1,4 +1,4 @@
-from infrastructure.databases.mongodb import MongoDB
+from infrastructure.databases.mongodb.mongodb import MongoDB
 
 """
 Class for managing users in a mongodb database

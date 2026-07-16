@@ -43,7 +43,7 @@ class Job_Post_Service:
     Function for removing one job post
     """
     async def delete_job_post(self, id):
-        result await self.job_post.delete_one({"_id" : id})
+        result = await self.job_post.delete_one({"_id" : id})
         return result.delete_count > 0
 
     """

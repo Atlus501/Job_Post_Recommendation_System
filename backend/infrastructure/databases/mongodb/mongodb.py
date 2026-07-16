@@ -3,7 +3,7 @@ from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 import logging
 
-from config.settings
+from config.settings import settings
 
 """
 Class for managing the MongoDB instance

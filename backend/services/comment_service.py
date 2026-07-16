@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from infrastructure.databases.mongodb.comments import Comments_DB
+from infrastructure.databases.mongodb.comment import Comment_DB
 from infrastructure.databases.mongodb.vote import Vote_DB
 
 from schemas.services.comments import Comment, Comment_Ids
@@ -14,7 +14,7 @@ class Comments_Service:
     Params: comments_db (Comments_DB)
             ratings_db (Ratings_DB)
     """
-    def __init__ (self, comments_db : Comments_DB, vote_db : Vote_DB):
+    def __init__ (self, comments_db : Comment_DB, vote_db : Vote_DB):
         self.comment = comments_db.collection
 
     """
@@ -50,6 +50,6 @@ class Comments_Service:
     Params: comment_ids (Comment_ids)
     Returns: result of whether an entry was deleted
     """
-    async def remove_comment(self, comment_ids : Comment_ids):
+    async def remove_comment(self, comment_ids : Comment_Ids):
         result = await self.comment.remove_one(comment_ids.model_dump())
         return result.deleted_count > 0

@@ -2,9 +2,9 @@ import logging
 
 import pymongo
 
-from schemas.services.requests import Request
+from schemas.services.request import Request
 
-from infrastructure.databases.mongodb.requests import Request_DB
+from infrastructure.databases.mongodb.request import Request_DB
 
 """
 Class for business logic of managing requests
@@ -13,7 +13,7 @@ class Request_Service:
     """
     Constructor for managing requests to add job postings
     """
-    def __init__(self, db : Request_DB)
+    def __init__(self, db : Request_DB):
         self.db = db
         self.request = db.collection
 
