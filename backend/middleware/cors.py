@@ -9,7 +9,7 @@ allowed_origins = [
 Set up the cors middleware for 
 """
 def setup_corsmiddleware(app : FastAPI) -> None:
-    app.add_middleware.(CORSMiddleware,
+    app.add_middleware(CORSMiddleware,
                         allow_origins=allowed_origins,           # Allowed domains list
                         allow_credentials=True,          # Permit cookies / auth headers
                         allow_methods=["*"],             # Allow all HTTP methods (GET, POST, etc.)

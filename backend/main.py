@@ -1,27 +1,22 @@
-from fastapi import FastAPI, APIRouter, status
+from fastapi import FastAPI, APIRouter, status, HTTPException
 from contextlib import asynccontextmanager
 import logging
 import uvicorn
-from dotenv import load_env
-import os
+
+from config.settings import settings
 
 #middlewares
 from middleware.secure_headers import SecureResponseMiddlware
 from middleware.cors import setup_corsmiddleware
 
-#errors
-from pymongo.errors import DuplicateKeyError
-from pydantic import ValidationError
-
-#error handlers
-from api.error_handler import duplicatekeyerror_handler, exception_handler, http_exception_handler,
-                              validationerror_handler, runtimeerror_handler
-
 #routers
 from api.routes.auth import router as auth_router
 
-#dependencies initiallized at beginning
+#error handler setup
+from error_handling.setup_error_handlers import setup_error_handlers
 
+#dependencies initiallized at beginning
+from registries.services.setup_registry import setup_service_registry
 
 from infrastructure.databases.neo4j import Neo4j_DB
 from infrastructure.jwt import Jwt_Manager
@@ -33,15 +28,7 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=logging.INFO, filename="job_post_recommendation_system.log", 
                                                format='%(asctime)s - %(levelname)s - %(message)s')
 
-    app.state.services = {}
-    app.state.services['auth'] = Auth_Service()
-    app.state.services['comment'] = Comment_Service()
-    app.state.services['job_post'] = Job_Post_Service()
-    app.state.services['rating'] = Rating_Service()
-    app.state.services['request'] = Request_Service()
-    app.state.services['unban_request'] = Unban_Request()
-    app.state.services['vote'] = Vote_Service()
-
+    app.state.service_registry = await setup_service_registry()
     app.state.neo4j_db = Neo4j_DB()
 
     app.state.jwt_manager = Jwt_Manager()
@@ -52,7 +39,7 @@ async def lifespan(app: FastAPI):
 
 #app
 app = FastAPI(
-    title="job recommendation backend"
+    title="job recommendation backend",
     lifespan=lifespan,
     description="Asynchronous backend service managing text context vector lookups",
     version="1.0.0"
@@ -60,15 +47,11 @@ app = FastAPI(
 
 #adding cors middlware
 setup_corsmiddleware(app)
-app.add_middlware(SecureResponseMiddlware)
+app.add_middleware(SecureResponseMiddlware)
 
 app.include_router(auth_router, prefix="/auth")
 
-app.add_exception_handler(DuplicateKeyError, duplicatekeyerror_handler)
-app.add_exception_handler(Exception, exception_handler)
-app.add_exception_handler(ValidationError, validationerror_handler)
-app.add_exception_handler(RuntimeError, runtimeerror_handler)
-app.add_exception_handler(HTTPException, http_exception_handler)
+setup_error_handler(app)
 
 """
 Function that initially welcomes the user as the are connected to the endpoint.
@@ -80,10 +63,9 @@ async def respond():
     }
     return response_body
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     logging.info("starting services")
-    load_env()
 
-    SERVER_IP = os.getenv("SERVER_IP")
-    SERVER_PORT = int(os.getenv("SERVER_PORT"))
+    SERVER_IP = settings.SERVER_IP
+    SERVER_PORT = settings.SERVER_PORT
     uvicorn.run("main:app", host=SERVER_IP, port=SERVER_PORT, reload=True)
