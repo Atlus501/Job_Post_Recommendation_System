@@ -15,7 +15,7 @@ class Service_Registry:
     """
     Get the creator function, which can then be called with specific arguments.
     """
-    def get_db(self, service_name: str):
+    def get_service(self, service_name: str):
         if guardrail_type not in self.registry:
             raise ValueError(f"database type '{service_name}' not registered.")
         return self.registry[service_name]

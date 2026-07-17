@@ -13,7 +13,7 @@ Factory for the services
 """
 class Service_Factory:
     def __init__(self, registry : DB_Registry):
-        self.db_registry
+        self.db_registry = registry
 
     def auth(self):
         user_db = self.db_registry.get_db('user')

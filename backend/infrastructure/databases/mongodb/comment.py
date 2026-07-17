@@ -2,7 +2,7 @@ from infrastructure.databases.mongodb.mongodb import MongoDB
 
 class Comment_DB(MongoDB):
     def __init__ (self):
-        super.__init__()
+        super().__init__()
         self.collection = self.get_collection("comments")
 
     async def setup_collection(self):

@@ -15,7 +15,7 @@ class DB_Registry:
     Get the creator function, which can then be called with specific arguments.
     """
     def get_db(self, db_name: str):
-        if guardrail_type not in self.registry:
+        if db_name not in self.registry:
             raise ValueError(f"database type '{db_name}' not registered.")
         return self.registry[db_name]
 

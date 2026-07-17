@@ -8,7 +8,7 @@ class Job_Post_DB(MongoDB):
     Constructor for the job post db manager
     """
     def __init__ (self):
-        super.__init__()
+        super().__init__()
         self.collection = self.get_collection("job_posts")
 
     """

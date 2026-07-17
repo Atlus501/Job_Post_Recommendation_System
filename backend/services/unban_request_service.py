@@ -8,8 +8,8 @@ Class responsible for the service logic of unban requests
 """
 class Unban_Request_Service:
     def __init__(self, unban_request_db : Unban_Request_DB):
-        self.unban_request = unban_request.collection
-        self.db = urban_request_db
+        self.unban_request = unban_request_db.collection
+        self.db = unban_request_db
 
     """
     Function to make un-ban requests
